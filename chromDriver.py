@@ -50,7 +50,6 @@ class ItemClass:
             self.Chrome = webdriver.Chrome()
         except Exception as err:
             print('开启浏览器错误:\n', err)
-            print(r'cmd中打开chrome.exe --remote-debugging-port=9515 --user-data-dir=""')
             self.err_log.append(err)
         # 设置位置和宽高
         self.Chrome.set_window_position(x=1000, y=353)
