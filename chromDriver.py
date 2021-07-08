@@ -4,21 +4,21 @@ import re
 import os
 import sqlite3
 from selenium.webdriver.common.action_chains import ActionChains
-'''
-根据关键词,在淘宝搜索页面按照销量排序,收集商品信息.
-在cmd中运行: chrome.exe --remote-debugging-port=9515 --user-data-dir=""
-数据库表查询:先根据id选取唯一值,根据time时间排序,根据sales观察销量变化
-'''
+from selenium.webdriver.chrome.options import Options
 
 
 def open_chrome():
-    user_port = input('输入要使用的端口(回车默认9515)：') or 9515
+    user_port = 9515
     find_port = os.popen('netstat -ano|findstr {}'.format(user_port)).read()
     while str(user_port) in find_port:
         print(user_port, '端口已被占用，正在更换端口')
         user_port += 1
         find_port = os.popen(
             'netstat -ano|findstr {}'.format(user_port)).read()
+    # window 用注释掉的这个，把下面的os.system注释掉。macOS不用变
+    # 不管Windows还是macOS都要装chromdriver，注意下目录位置，还有兼容的版本！！！
+    # user-data 参数指定一个文件夹就ok了，用来缓存
+    # os.system(r'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\App\Chrome"')
     os.system(
         r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
     print('使用端口:', user_port)
@@ -41,9 +41,11 @@ class ItemClass:
         self.img_err = 0
         self.err_log = []
         chrome_options = webdriver.ChromeOptions()
+        # 设置无头模式
+        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--disable-gpu')
         chrome_options.add_experimental_option(
             "debuggerAddress", "127.0.0.1:{}".format(user_port))
-        chrome_driver = r"/usr/local/bin/chromedriver"
         try:
             self.Chrome = webdriver.Chrome()
         except Exception as err:
@@ -267,7 +269,7 @@ class ItemClass:
 
         url = 'https://s.taobao.com/search?q={}'.format(self.url_keyword)
         self.Chrome.get(url)
-        time.sleep(15)
+        time.sleep(20)
         self.searchwords()
         time.sleep(1)
         self.intercept()
@@ -300,8 +302,8 @@ if __name__ == '__main__':
     # print('打开chrome浏览器')
     open_chrome()
     # 程序开始
-    browser = ItemClass(url_keyword=input('输入要查询的关键词(默认男童):')
-                        or '男童', user_page=int(input('查询的页数(默认10):') or 10))
+    browser = ItemClass(url_keyword=input('输入要查询的关键词:')
+                        or '手机', user_page=int(input('查询的页数(默认10):') or 10))
     browser.start()
 
     # 程序结束打印信息
