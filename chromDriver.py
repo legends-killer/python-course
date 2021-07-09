@@ -18,8 +18,8 @@ def open_chrome():
     # window 用注释掉的这个，把下面的os.system注释掉。macOS不用变
     # 不管Windows还是macOS都要装chromdriver，注意下目录位置，还有兼容的版本！！！
     # user-data 参数指定一个文件夹就ok了，用来缓存
-    os.system(r'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
-    # os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
+    # os.system(r'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
+    os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
     print('使用端口:', user_port)
 
 
@@ -45,6 +45,7 @@ class ItemClass:
         # chrome_options.add_argument('--disable-gpu')
         chrome_options.add_experimental_option(
             "debuggerAddress", "127.0.0.1:{}".format(user_port))
+
         try:
             self.Chrome = webdriver.Chrome()
         except Exception as err:
@@ -52,7 +53,7 @@ class ItemClass:
             self.err_log.append(err)
         # 设置位置和宽高
         self.Chrome.set_window_position(x=1000, y=353)
-        self.Chrome.set_window_size(width=900, height=500)
+        self.Chrome.set_window_size(width=1900, height=900)
         # 拦截webdriver检测代码
         self.Chrome.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": """
                       Object.defineProperty(navigator, 'webdriver', {
@@ -61,12 +62,15 @@ class ItemClass:
                       """})
 
     def searchwords(self):
-        self.Chrome.get('https://taobao.com')
-        self.Chrome.find_element_by_xpath(
-            '//*[@id="q"]').send_keys('{}'.format(self.url_keyword))
+        self.Chrome.get('https://jd.com')
+
+        self.Chrome.find_element_by_id(
+            'key').send_keys('{}'.format(self.url_keyword))
         time.sleep(0.3)
+        # self.Chrome.find_element_by_xpath(
+        #     '//button[@class="btn-search tb-bg"]').click()
         self.Chrome.find_element_by_xpath(
-            '//button[@class="btn-search tb-bg"]').click()
+            "//div[@class='form']/button").click()
 
     # 如果出现验证码拦截
     def intercept(self):
@@ -94,12 +98,12 @@ class ItemClass:
 
     # 直接下拉到固定的最底栏
     def scrolldown(self):
-        y_plus = 450
+        y_plus = 550
         y = 0
         for i in range(9):
             y += y_plus
             self.Chrome.execute_script("window.scroll(0,{})".format(y))
-            time.sleep(0.2)
+            time.sleep(0.1)
         # self.Chrome.execute_script("window.scroll(400,200)")
 
     # 下拉到最底栏第二种,检查是否到最底栏
@@ -129,7 +133,8 @@ class ItemClass:
     # 点击下一页
     def click_next(self):
         self.Chrome.execute_script("window.scroll(400,150)")
-        self.Chrome.find_element_by_xpath('//a[@title="下一页"]').click()
+        self.Chrome.find_element_by_xpath(
+            "//a[@title='使用方向键右键也可翻到下一页哦！']").click()
         time.sleep(1)
 
     # 获得商品列表信息并储存
@@ -137,32 +142,38 @@ class ItemClass:
         time.sleep(0.2)
         self.scrolldown()
         time.sleep(0.5)
-        for item in self.Chrome.find_elements_by_xpath('.//*[@class="item J_MouserOnverReq  "]'):
+        i = 1
+        for itm in self.Chrome.find_elements_by_xpath(".//*[@class='gl-item']"):
+            print(i)
+            i += 1
+            item = itm.find_element_by_xpath(".//*[@class='gl-i-wrap']")
+            list = item.text.split('\n')
+            print(list)
+
+            # print(itm.find_elements_by_xpath("//div[@class='p-img']"))
             try:
                 self.order_number += 1
-                self.img_url = \
-                    item.find_element_by_xpath(
-                        './/*[@class="J_ItemPic img"]').get_attribute('src').split('_360')[0]
-                self.item_url = item.find_element_by_xpath('.//*[@class="pic-link J_ClickStat J_ItemPicA"]')\
-                    .get_attribute('href').split('&')[0]
-                sales_tem = item.find_element_by_xpath(
-                    './/*[@class="deal-cnt"]').text
-                self.sales = int(''.join(re.findall(r'\d*\d', sales_tem)))
-                self.price = float(item.find_element_by_xpath(
-                    './/*[@class="price g_price g_price-highlight"]/strong').text)
-                self.detail_head = item.find_element_by_xpath(
-                    './/*[@class="J_ItemPic img"]').get_attribute('alt')
-                self.shop_name = item.find_element_by_xpath(
-                    './/*[@class="shopname J_MouseEneterLeave J_ShopInfo"]').text
-                if '万' in sales_tem:
-                    self.sales = int(
-                        float(re.findall(r'\d+.\d*', sales_tem)[0])*10000)
+                self.img_url = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[1]/a/img").get_attribute('src')
+                self.item_url = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[1]/a").get_attribute('href')
+                sales_tem = list[1]
+                self.sales = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[5]/strong/a").text.replace('+', '')
+                self.price = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[3]/strong/i").text
+                self.detail_head = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[4]/a/em").text
+                self.shop_name = itm.find_element_by_xpath(
+                    ".//*[@class='gl-i-wrap']/*[7]/span/a").get_attribute('title')
+                if '万' in self.sales:
+                    self.sales = int(self.sales.replace('万', ''))*10000
                 if '.gif' in self.img_url:
                     self.img_err += 1
-                    print('排名第{}位:\t销量:{}件,\t价格为:{}元,  \t店铺名:{},  \t图片错误:{}'.format(
+                    print('排名第{}位:\t销量:{},\t价格为:{}元,  \t店铺名:{},  \t图片错误:{}'.format(
                         self.order_number, self.sales, self.price, self.shop_name, self.img_url))
                 else:
-                    print('排名第{}位:\t销量:{}件,\t价格为:{}元,  \t店铺名:{}'.format(
+                    print('排名第{}位:\t销量:{},\t价格为:{}元,  \t店铺名:{}'.format(
                         self.order_number, self.sales, self.price, self.shop_name))
                 self.t_dic = [self.item_url, self.img_url, self.shop_name,
                               self.detail_head, self.price, self.sales]
@@ -217,10 +228,11 @@ class ItemClass:
     # 储存在一张表中
     def save_content_one(self):
         # 时间
+        print('saving')
         t_time = time.strftime('%Y-%m-%d %H:%M:%S',
                                time.localtime(time.time()))
         # 获取商品id
-        t_id = int(self.item_url.split('=')[1])
+        t_id = int(self.item_url.split('/')[-1].replace('.html', ''))
         # 字典里加入时间
         self.t_dic.append(t_time)
         # 字典里加入商品id
@@ -257,6 +269,23 @@ class ItemClass:
         # 字典归零
         self.t_dic = []
 
+    # 二维码登录
+
+    def login_with_qrcode(self):
+        # url = 'https://s.taobao.com/search?q={}'.format(self.url_keyword)
+        # self.Chrome.get(url)
+        # self.Chrome.find_element_by_class_name('qrcode-img').click()  # 切换扫码登录
+        time.sleep(1)
+        os.system(r'rm -r ./qrLogin.png')
+        # self.Chrome.set_network_conditions(
+        #     offline=True, latency=5, throughput=500 * 1024)
+        self.Chrome.find_element_by_class_name(
+            'qrcode-img').screenshot('qrLogin.png')
+        # self.Chrome.set_network_conditions(
+        #     offline=False, latency=5, throughput=500 * 1024)
+        time.sleep(15)
+        self.intercept()
+
     # 开始
     def start(self, t_path=r'content.db'):
         print('开始运行')
@@ -265,13 +294,14 @@ class ItemClass:
         get_page = 0  # 查询到了多少页
         # self.Chrome.get('https://www.taobao.com')
 
-        url = 'https://s.taobao.com/search?q={}'.format(self.url_keyword)
-        self.Chrome.get(url)
-        time.sleep(20)
         self.searchwords()
+        try:
+            self.login_with_qrcode()
+        except Exception as err:
+            print('不需要登录')
         time.sleep(1)
-        self.intercept()
-        self.sales_sort()   # 按销量排序
+        # self.intercept()
+        # self.sales_sort()   # 按销量排序
         try:
             while get_page < self.user_page:
                 get_page += 1
