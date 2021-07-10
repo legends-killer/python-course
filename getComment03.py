@@ -69,11 +69,11 @@ class ItemClass:
         self.conn = sqlite3.connect('./comment.db')
         self.cursor = self.conn.cursor()
         # ---连接数据库取出url
-        conn = sqlite3.connect('./content.db')
-        c = conn.cursor()
+        self.cnt_connect = sqlite3.connect('./content.db')
+        self.cnt_cursor = self.cnt_connect.cursor()
         print("Opened database successfully")
-        table = "手机"
-        cursor = c.execute("SELECT item from " + table)
+        table = self.url_keyword
+        cursor = self.cnt_cursor.execute("SELECT item from " + table)
         ii = 1
         for row in cursor:
             print("URL=", row[0])
