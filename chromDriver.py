@@ -18,8 +18,8 @@ def open_chrome():
     # window 用注释掉的这个，把下面的os.system注释掉。macOS不用变
     # 不管Windows还是macOS都要装chromdriver，注意下目录位置，还有兼容的版本！！！
     # user-data 参数指定一个文件夹就ok了，用来缓存
-    # os.system(r'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
-    os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
+    os.system(r'start chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
+    # os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
     print('使用端口:', user_port)
 
 
@@ -154,18 +154,18 @@ class ItemClass:
             try:
                 self.order_number += 1
                 self.img_url = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[1]/a/img").get_attribute('src')
+                    ".//*[@class='gl-i-wrap']/*[@class='p-img']/a/img").get_attribute('src')
                 self.item_url = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[1]/a").get_attribute('href')
+                    ".//*[@class='gl-i-wrap']/*[@class='p-img']/a").get_attribute('href')
                 sales_tem = list[1]
                 self.sales = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[5]/strong/a").text.replace('+', '')
+                    ".//*[@class='gl-i-wrap']/*[@class='p-commit']/strong/a").text.replace('+', '')
                 self.price = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[3]/strong/i").text
+                    ".//*[@class='gl-i-wrap']/*[@class='p-price']/strong/i").text
                 self.detail_head = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[4]/a/em").text
+                    ".//*[@class='gl-i-wrap']/*[@class='p-name p-name-type-2']/a/em").text
                 self.shop_name = itm.find_element_by_xpath(
-                    ".//*[@class='gl-i-wrap']/*[7]/span/a").get_attribute('title')
+                    ".//*[@class='gl-i-wrap']/*[@class='p-shop']/span/a").get_attribute('title')
                 if '万' in self.sales:
                     self.sales = int(self.sales.replace('万', ''))*10000
                 if '.gif' in self.img_url:

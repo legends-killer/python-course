@@ -18,8 +18,8 @@ def open_chrome():
     # window 用注释掉的这个，把下面的os.system注释掉。macOS不用变
     # 不管Windows还是macOS都要装chromdriver，注意下目录位置，还有兼容的版本！！！
     # user-data 参数指定一个文件夹就ok了，用来缓存
-    # os.system(r'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
-    os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
+    os.system(r'start chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\App\\Chrome"')
+    # os.system(r'sudo /usr/local/bin/chromedriver --remote-debugging-port={} --user-data-dir="/Users/ljz/temp"'.format(user_port))
     print('使用端口:', user_port)
 
 
@@ -104,19 +104,17 @@ class ItemClass:
         time.sleep(0.5)
         get_page = 0
 
-        try:
-            while get_page < self.user_page:
-                get_page += 1
-                print('抓取第{}页:'.format(get_page))
+        while get_page < self.user_page:
+            get_page += 1
+            print('抓取第{}页:'.format(get_page))
+            try:
                 self.get_comment()
-                if get_page != self.user_page:
-                    self.click_next()
-        except Exception as err:
-            print('出现错误:', err)
-            self.err_log.append(err)
-            self.cursor.close()
-            self.conn.commit()
-            self.conn.close()
+            except Exception as err:
+                print('出现错误1:', err)
+            if get_page != self.user_page:
+                self.click_next()
+                if self.commentover:
+                    break
 
     # 直接下拉到固定的最底栏
 
@@ -155,10 +153,15 @@ class ItemClass:
 
     # 点击下一页
     def click_next(self):
+        time.sleep(2)
         self.Chrome.execute_script("window.scroll(400,150)")
-        self.Chrome.find_element_by_xpath(
-            '//*[@id="comment-0"]/div[12]/div/div/a[8]').click()
-        time.sleep(1)
+        try:
+            self.Chrome.find_element_by_css_selector('#comment-0 > div.com-table-footer > div > div > a.ui-pager-next').click()
+            time.sleep(1)
+            self.commentover = 0
+        except Exception as err:
+            print("评论页数不足")
+            self.commentover = 1
 
     # ---部分修改---获得商品评价信息并储存
     def get_comment(self):
@@ -167,13 +170,12 @@ class ItemClass:
         time.sleep(0.5)
 
         com_list = self.Chrome.find_elements_by_xpath(
-            '//*[@id="comment-0"]/div')
+            '//*[@id="comment-0"]')
         print(com_list)
         for com in com_list:
-            com_text = com.find_element_by_xpath('.//div[2]/p').text
+            com_text = com.find_element_by_xpath(".//*[@class='comment-column J-comment-column']/p").text
             comment = {'评价': com_text, 'item': self.item_url}
             print(comment)
-
             self.t_dic = [com_text, self.item_url]
             # self.t_dic.append(comment)
             self.save_content_one()
