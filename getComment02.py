@@ -39,6 +39,9 @@ class ItemClass:
         self.cursor = None
         self.img_err = 0
         self.err_log = []
+        self.star = 0
+        self.cnt_connect = None
+        self.cnt_cursor = None
         chrome_options = webdriver.ChromeOptions()
         # 设置无头模式
         # chrome_options.add_argument('--headless')
@@ -65,11 +68,11 @@ class ItemClass:
         self.conn = sqlite3.connect('./comment.db')
         self.cursor = self.conn.cursor()
         # ---连接数据库取出url
-        conn = sqlite3.connect('./content.db')
-        c = conn.cursor()
+        self.cnt_connect = sqlite3.connect('./content.db')
+        self.cnt_cursor = self.cnt_connect.cursor()
         print("Opened database successfully")
         table = "手机"
-        cursor = c.execute("SELECT item from " + table)
+        cursor = self.cnt_cursor.execute("SELECT item from " + table)
         ii = 1
         for row in cursor:
             print("URL=", row[0])
@@ -81,17 +84,39 @@ class ItemClass:
                 print('出现错误:', err)
 
     # ----访问商页面并点击评价
-    def searchbyURL(self,):
+    def searchbyURL(self):
         self.Chrome.get(self.item_url)
         time.sleep(0.3)
-        # self.Chrome.find_element_by_xpath(
-        #     '//button[@class="btn-search tb-bg"]').click()
+
         _button = self.Chrome.find_element_by_xpath(
             '//*[@id="detail"]/div[1]/ul/li[5]')
+        _div = self.Chrome.find_element_by_xpath(
+            '//div[@class="m m-aside popbox"]')
+        div2 = _div.find_element_by_xpath('.//*[@class="mc"]')
+        star = div2.find_element_by_xpath(
+            './/*[@class="star-gray"]').get_attribute("title")
+        print(star)
+        self.star = star
+        self.save_stars()
+
         _button.click()
 
-        time.sleep(1)
-        self.get_comment()
+        time.sleep(0.5)
+        get_page = 0
+
+        try:
+            while get_page < self.user_page:
+                get_page += 1
+                print('抓取第{}页:'.format(get_page))
+                self.get_comment()
+                if get_page != self.user_page:
+                    self.click_next()
+        except Exception as err:
+            print('出现错误:', err)
+            self.err_log.append(err)
+            self.cursor.close()
+            self.conn.commit()
+            self.conn.close()
 
     # 直接下拉到固定的最底栏
 
@@ -132,7 +157,7 @@ class ItemClass:
     def click_next(self):
         self.Chrome.execute_script("window.scroll(400,150)")
         self.Chrome.find_element_by_xpath(
-            "//a[@title='使用方向键右键也可翻到下一页哦！']").click()
+            '//*[@id="comment-0"]/div[12]/div/div/a[8]').click()
         time.sleep(1)
 
     # ---部分修改---获得商品评价信息并储存
@@ -153,21 +178,21 @@ class ItemClass:
             # self.t_dic.append(comment)
             self.save_content_one()
 
+    def save_stars(self):
+        print('saving stars')
+        table_name = self.url_keyword
+        sql = 'update ' + "'" + table_name + "'" + ' set stars = ' + \
+            self.star + ' where item = ' + "'" + self.item_url + "'"
+        print(sql)
+        print(self.cnt_cursor.execute(sql))
+        self.cnt_connect.commit()
+
     # ---部分修改---储存在一张表中
 
     def save_content_one(self):
         # 时间
         print('saving')
         print(self.t_dic)
-        # t_time = time.strftime('%Y-%m-%d %H:%M:%S',
-        #                        time.localtime(time.time()))
-        # # 获取商品id
-        # t_id = int(self.item_url.split('/')[-1].replace('.html', ''))
-        # # 字典里加入时间
-        # self.t_dic.append(t_time)
-        # # 字典里加入商品id
-        # self.t_dic.append(t_id)
-        # 用搜索关键词当表名
         table_name = self.url_keyword
         # 创建表sql代码,如果不存在则创建表
         sql_if_exists = '''
@@ -176,12 +201,6 @@ class ItemClass:
                         comment          TEXT,
                         url         TEXT);
                         '''
-        # 写入表sql代码,如果表里有匹配到的数据,则写入否则不写入
-        # sql_insert_or_ignore ='''
-        #              INSERT INTO [{0}] (order_number,id,time,sales,price,header,shop,img,item) \
-        #              SELECT '{2}',{1[7]},'{1[6]}','{1[5]}','{1[4]}','{1[3]}','{1[2]}','{1[1]}','{1[0]}'
-        #              WHERE NOT EXISTS (SELECT *FROM [{0}] WHERE id='{1[7]}' AND sales='{1[5]}');
-        #              '''
         # 执行创建表sql代码
         self.cursor.execute(sql_if_exists.format(table_name+"comment"))
         # 执行写入表sql代码

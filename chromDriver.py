@@ -207,7 +207,8 @@ class ItemClass:
                         header      TEXT,
                         shop        TXEXT,
                         item        TEXT,
-                        img         TEXT);
+                        img         TEXT,
+                        stars       TEXT);
                         '''
         # 写入表sql代码,如果表里有匹配到的数据,则写入否则不写入
         sql_insert_or_ignore = '''
