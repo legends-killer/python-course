@@ -113,7 +113,8 @@ class ItemClass:
             self.star = star
             self.save_stars()
         except Exception as err:
-            pass
+            self.star = '5.0'
+            self.save_stars()
 
         
 
