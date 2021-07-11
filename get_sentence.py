@@ -13,7 +13,6 @@ def get_sentence():
     file_sentence = codecs.open(
         './data/file_sentence.txt', 'w', encoding='utf-8')
 
-    # 排序句子共10000句
     st = dict()
     for _, line in enumerate(file_corpus):
         line = line.strip()
@@ -24,7 +23,7 @@ def get_sentence():
 
     st = sorted(st.items(), key=lambda x: x[1], reverse=True)
     # 句子总数
-    for s in st[:10000]:
+    for s in st:
         file_sentence.write(s[0]+'\n')
 
     file_corpus.close()
